@@ -53,4 +53,5 @@ var (
 	ErrWireguardPublicKeyNotValid      = errors.New("public key is not valid")
 	ErrWireguardKeepAliveNegative      = errors.New("persistent keep alive interval is negative")
 	ErrWireguardImplementationNotValid = errors.New("implementation is not valid")
+	ErrWireguardListenPortNegative     = errors.New("listen port is negative")
 )

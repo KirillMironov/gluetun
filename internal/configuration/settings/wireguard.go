@@ -28,6 +28,8 @@ type Wireguard struct {
 	PreSharedKey *string `json:"pre_shared_key"`
 	// Addresses are the Wireguard interface addresses.
 	Addresses []netip.Prefix `json:"addresses"`
+	// ListenPort assigned to the client.
+	ListenPort *int `json:"listen_port"`
 	// AllowedIPs are the Wireguard allowed IPs.
 	// If left unset, they default to "0.0.0.0/0"
 	// and, if IPv6 is supported, "::0".
@@ -117,6 +119,11 @@ func (w Wireguard) validate(vpnProvider string, ipv6Supported bool) (err error) 
 		}
 	}
 
+	// Validate ListenPort
+	if w.ListenPort != nil && *w.ListenPort < 0 {
+		return fmt.Errorf("%w: %d", ErrWireguardListenPortNegative, *w.ListenPort)
+	}
+
 	// Validate AllowedIPs
 	// WARNING: do not check for IPv6 networks in the allowed IPs,
 	// the wireguard code will take care to ignore it.
@@ -154,6 +161,7 @@ func (w *Wireguard) copy() (copied Wireguard) {
 		PrivateKey:                  gosettings.CopyPointer(w.PrivateKey),
 		PreSharedKey:                gosettings.CopyPointer(w.PreSharedKey),
 		Addresses:                   gosettings.CopySlice(w.Addresses),
+		ListenPort:                  gosettings.CopyPointer(w.ListenPort),
 		AllowedIPs:                  gosettings.CopySlice(w.AllowedIPs),
 		PersistentKeepaliveInterval: gosettings.CopyPointer(w.PersistentKeepaliveInterval),
 		Interface:                   w.Interface,
@@ -166,6 +174,7 @@ func (w *Wireguard) overrideWith(other Wireguard) {
 	w.PrivateKey = gosettings.OverrideWithPointer(w.PrivateKey, other.PrivateKey)
 	w.PreSharedKey = gosettings.OverrideWithPointer(w.PreSharedKey, other.PreSharedKey)
 	w.Addresses = gosettings.OverrideWithSlice(w.Addresses, other.Addresses)
+	w.ListenPort = gosettings.OverrideWithPointer(w.ListenPort, other.ListenPort)
 	w.AllowedIPs = gosettings.OverrideWithSlice(w.AllowedIPs, other.AllowedIPs)
 	w.PersistentKeepaliveInterval = gosettings.OverrideWithPointer(w.PersistentKeepaliveInterval,
 		other.PersistentKeepaliveInterval)
@@ -221,6 +230,10 @@ func (w Wireguard) toLinesNode() (node *gotree.Node) {
 		addressesNode.Append(address.String())
 	}
 
+	if w.ListenPort != nil {
+		node.Appendf("Listen port: %d", *w.ListenPort)
+	}
+
 	allowedIPsNode := node.Appendf("Allowed IPs:")
 	for _, allowedIP := range w.AllowedIPs {
 		allowedIPsNode.Append(allowedIP.String())
@@ -260,6 +273,11 @@ func (w *Wireguard) read(r *reader.Reader) (err error) {
 			return fmt.Errorf("parsing address: %w", err)
 		}
 		w.Addresses = append(w.Addresses, address)
+	}
+
+	w.ListenPort, err = r.IntPtr("WIREGUARD_LISTEN_PORT")
+	if err != nil {
+		return err
 	}
 
 	w.AllowedIPs, err = r.CSVNetipPrefixes("WIREGUARD_ALLOWED_IPS")

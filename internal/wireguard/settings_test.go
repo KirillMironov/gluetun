@@ -271,6 +271,22 @@ func Test_Settings_Check(t *testing.T) {
 			errWrapped: ErrImplementationInvalid,
 			errMessage: "invalid implementation: x",
 		},
+		"negative listen port": {
+			settings: Settings{
+				InterfaceName: "wg0",
+				PrivateKey:    validKey1,
+				PublicKey:     validKey2,
+				Endpoint:      netip.AddrPortFrom(netip.AddrFrom4([4]byte{1, 2, 3, 4}), 51820),
+				AllowedIPs:    []netip.Prefix{allIPv4()},
+				Addresses: []netip.Prefix{
+					netip.PrefixFrom(netip.AddrFrom4([4]byte{1, 2, 3, 4}), 24),
+				},
+				ListenPort:   ptrTo(-1),
+				FirewallMark: 999,
+			},
+			errWrapped: ErrListenPortIsNegative,
+			errMessage: "listen port is negative: -1",
+		},
 		"all valid": {
 			settings: Settings{
 				InterfaceName: "wg0",
@@ -345,6 +361,7 @@ func Test_Settings_String(t *testing.T) {
 ├── Endpoint: not set
 ├── IPv6: enabled
 ├── Implementation: x
+├── Listen port: not set
 └── Addresses: not set`
 	s := settings.String()
 	assert.Equal(t, expected, s)
@@ -369,6 +386,7 @@ func Test_Settings_Lines(t *testing.T) {
 				"├── Endpoint: not set",
 				"├── IPv6: disabled",
 				"├── Implementation: ",
+				"├── Listen port: not set",
 				"└── Addresses: not set",
 			},
 		},
@@ -385,6 +403,7 @@ func Test_Settings_Lines(t *testing.T) {
 					netip.PrefixFrom(netip.AddrFrom4([4]byte{1, 1, 1, 1}), 24),
 					netip.PrefixFrom(netip.AddrFrom4([4]byte{2, 2, 2, 2}), 32),
 				},
+				ListenPort:     ptrTo(51820),
 				IPv6:           ptr(true),
 				Implementation: "userspace",
 			},
@@ -398,6 +417,7 @@ func Test_Settings_Lines(t *testing.T) {
 				"├── Firewall mark: 999",
 				"├── Rule priority: 888",
 				"├── Implementation: userspace",
+				"├── Listen port: 51820",
 				"└── Addresses:",
 				"    ├── 1.1.1.1/24",
 				"    └── 2.2.2.2/32",
@@ -424,6 +444,7 @@ func Test_Settings_Lines(t *testing.T) {
 				"- Endpoint: not set",
 				"- IPv6: disabled",
 				"- Implementation: ",
+				"- Listen port: not set",
 				"* Addresses:",
 				"  - 1.1.1.1/24",
 				"  * 2.2.2.2/32",

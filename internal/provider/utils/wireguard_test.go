@@ -35,6 +35,7 @@ func Test_BuildWireguardSettings(t *testing.T) {
 					netip.PrefixFrom(netip.AddrFrom4([4]byte{1, 1, 1, 1}), 32),
 					netip.PrefixFrom(netip.AddrFrom16([16]byte{}), 32),
 				},
+				ListenPort: ptrTo(51820),
 				AllowedIPs: []netip.Prefix{
 					netip.PrefixFrom(netip.AddrFrom4([4]byte{2, 2, 2, 2}), 32),
 					netip.PrefixFrom(netip.AddrFrom16([16]byte{}), 32),
@@ -52,6 +53,7 @@ func Test_BuildWireguardSettings(t *testing.T) {
 				Addresses: []netip.Prefix{
 					netip.PrefixFrom(netip.AddrFrom4([4]byte{1, 1, 1, 1}), 32),
 				},
+				ListenPort: ptrTo(51820),
 				AllowedIPs: []netip.Prefix{
 					netip.PrefixFrom(netip.AddrFrom4([4]byte{2, 2, 2, 2}), 32),
 				},

@@ -54,6 +54,7 @@ func makeDeviceConfig(settings Settings) (config wgtypes.Config, err error) {
 
 	config = wgtypes.Config{
 		PrivateKey:   &privateKey,
+		ListenPort:   settings.ListenPort,
 		ReplacePeers: true,
 		FirewallMark: &firewallMark,
 		Peers: []wgtypes.PeerConfig{

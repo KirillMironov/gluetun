@@ -27,6 +27,9 @@ type Settings struct {
 	// Addresses assigned to the client.
 	// Note IPv6 addresses are ignored if IPv6 is not supported.
 	Addresses []netip.Prefix
+	// ListenPort assigned to the client.
+	// It defaults to random port if left unset or set to 0.
+	ListenPort *int
 	// AllowedIPs is the IP networks to be routed through
 	// the Wireguard interface.
 	// Note IPv6 addresses are ignored if IPv6 is not supported.
@@ -106,6 +109,7 @@ var (
 	ErrFirewallMarkMissing     = errors.New("firewall mark is missing")
 	ErrMTUMissing              = errors.New("MTU is missing")
 	ErrImplementationInvalid   = errors.New("invalid implementation")
+	ErrListenPortIsNegative    = errors.New("listen port is negative")
 )
 
 var interfaceNameRegexp = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
@@ -148,6 +152,10 @@ func (s *Settings) Check() (err error) {
 			return fmt.Errorf("%w: for address %d of %d",
 				ErrAddressNotValid, i+1, len(s.Addresses))
 		}
+	}
+
+	if s.ListenPort != nil && *s.ListenPort < 0 {
+		return fmt.Errorf("%w: %d", ErrListenPortIsNegative, *s.ListenPort)
 	}
 
 	if len(s.AllowedIPs) == 0 {
@@ -270,6 +278,12 @@ func (s Settings) ToLines(settings ToLinesSettings) (lines []string) {
 	if s.Implementation != "auto" {
 		lines = append(lines, fieldPrefix+"Implementation: "+s.Implementation)
 	}
+
+	listenPort := notSet
+	if s.ListenPort != nil {
+		listenPort = fmt.Sprint(*s.ListenPort)
+	}
+	lines = append(lines, fieldPrefix+"Listen port: "+listenPort)
 
 	if len(s.Addresses) == 0 {
 		lines = append(lines, lastFieldPrefix+"Addresses: "+notSet)
